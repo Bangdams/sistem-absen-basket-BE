@@ -257,10 +257,10 @@ func (userUsecase *UserUsecaseImpl) Update(ctx context.Context, request *model.U
 	}
 
 	user := &entity.User{
-		Username: request.Username,
+		ID: request.ID,
 	}
 
-	err = userUsecase.UserRepo.FindByUsername(tx, user)
+	err = userUsecase.UserRepo.FindByIdForUpdate(tx, user)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			errorResponse.Message = "User data was not found"
@@ -272,7 +272,7 @@ func (userUsecase *UserUsecaseImpl) Update(ctx context.Context, request *model.U
 			return nil, fiber.NewError(fiber.ErrNotFound.Code, string(jsonString))
 		}
 
-		log.Println("error find by Username : ", err)
+		log.Println("error find by user id : ", err)
 		return nil, fiber.ErrInternalServerError
 	}
 
@@ -285,6 +285,8 @@ func (userUsecase *UserUsecaseImpl) Update(ctx context.Context, request *model.U
 
 		user.Password = string(password)
 	}
+
+	user.Username = request.Username
 
 	switch user.Role {
 	case "coach":

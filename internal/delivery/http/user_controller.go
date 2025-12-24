@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -72,29 +73,10 @@ func (controller *UserControllerImpl) Create(ctx *fiber.Ctx) error {
 func (controller *UserControllerImpl) Update(ctx *fiber.Ctx) error {
 	request := new(model.UpdateUserRequest)
 
-	userId, err := strconv.Atoi(ctx.FormValue("id"))
-	if err != nil {
-		log.Println(userId)
-		log.Println("error badrequest")
+	if err := ctx.BodyParser(request); err != nil {
+		log.Println("error badrequest:", err)
 		return fiber.ErrBadRequest
 	}
-
-	request.ID = uint(userId)
-
-	switch request.Role {
-	case "coach":
-		request.CoachRequest.Nip = ctx.FormValue("nip")
-		request.CoachRequest.FullName = ctx.FormValue("full_name")
-	case "student":
-		request.StudentRequest.Nis = ctx.FormValue("nis")
-		request.StudentRequest.FullName = ctx.FormValue("full_name")
-		request.StudentRequest.Address = ctx.FormValue("address")
-		request.StudentRequest.PhoneNumber = ctx.FormValue("phone_number")
-	default:
-		return fiber.ErrBadRequest
-	}
-
-	request.Password = ctx.FormValue("password")
 
 	response, err := controller.UserUsecase.Update(ctx.UserContext(), request)
 	if err != nil {
@@ -184,6 +166,7 @@ func (controller *UserControllerImpl) Logout(ctx *fiber.Ctx) error {
 		Name:     "token",
 		Value:    "",
 		MaxAge:   -1,
+		Expires:  time.Now().Add(-time.Hour),
 		HTTPOnly: true,
 		Secure:   true,
 		SameSite: "None",
