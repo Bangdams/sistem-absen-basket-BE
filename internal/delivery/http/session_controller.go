@@ -60,9 +60,22 @@ func (controller *SessionControllerImpl) FindById(ctx *fiber.Ctx) error {
 
 // FindAll implements SessionController.
 func (controller *SessionControllerImpl) FindAll(ctx *fiber.Ctx) error {
-	responses := controller.SessionUsecase.FindAll(ctx.UserContext())
+	order := ctx.Query("order")
+	page := ctx.QueryInt("page")
+	limit := ctx.QueryInt("limit")
 
-	return ctx.JSON(model.WebResponses[model.SessionResponse]{Data: responses})
+	responses, currentPage, totalRecords, totalPages, err := controller.SessionUsecase.FindAll(ctx.UserContext(), order, page, limit)
+	if err != nil {
+		log.Println("failed to FindAll session")
+		return err
+	}
+
+	return ctx.JSON(model.WebResponsesPagination[model.SessionResponse]{
+		Data:         responses,
+		CurrentPage:  *currentPage,
+		TotalRecords: *totalRecords,
+		TotalPages:   *totalPages,
+	})
 }
 
 // Delete implements SessionController.

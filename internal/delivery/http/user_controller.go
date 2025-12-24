@@ -120,7 +120,7 @@ func (controller *UserControllerImpl) FindAll(ctx *fiber.Ctx) error {
 
 	responses, currentPage, totalRecords, totalPages, err := controller.UserUsecase.FindAll(ctx.UserContext(), uint(userId), role, order, page, limit)
 	if err != nil {
-		log.Println("failed to search user")
+		log.Println("failed to FindAll user")
 		return err
 	}
 

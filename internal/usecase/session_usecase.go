@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -21,7 +22,7 @@ import (
 // cek hela
 type SessionUsecase interface {
 	FindById(ctx context.Context, sessionId uint) (*model.SessionResponse, error)
-	FindAll(ctx context.Context) *[]model.SessionResponse
+	FindAll(ctx context.Context, order string, page int, limit int) (*[]model.SessionResponse, *int, *int, *int, error)
 	Create(ctx context.Context, request *model.SessionRequest) (*model.SessionResponse, error)
 	Delete(ctx context.Context, sessionId uint) error
 	Update(ctx context.Context, request *model.UpdateSessionRequest) (*model.SessionResponse, error)
@@ -71,12 +72,39 @@ func (sessionUsecase *SessionUsecaseImpl) FindById(ctx context.Context, sessionI
 }
 
 // FindAll implements SessionUsecase.
-func (sessionUsecase *SessionUsecaseImpl) FindAll(ctx context.Context) *[]model.SessionResponse {
+func (sessionUsecase *SessionUsecaseImpl) FindAll(ctx context.Context, order string, page int, limit int) (*[]model.SessionResponse, *int, *int, *int, error) {
 	sessions := &[]entity.Session{}
 
-	sessionUsecase.SessionRepo.FindAll(sessionUsecase.DB.WithContext(ctx), sessions)
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 5
+	}
 
-	return converter.SessionToResponses(sessions)
+	offset := (page - 1) * limit
+
+	if order == "" {
+		order = "DESC"
+	}
+
+	totalRecords, err := sessionUsecase.SessionRepo.FindAll(sessionUsecase.DB.WithContext(ctx), limit, offset, order, sessions)
+	if err != nil {
+		log.Println("failed when find all repo session : ", err)
+		return nil, nil, nil, nil, fiber.ErrInternalServerError
+	}
+
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(limit)))
+
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	taotalRecodeInt := int(totalRecords)
+
+	log.Println("success find all from usecase sessions")
+
+	return converter.SessionToResponses(sessions), &page, &taotalRecodeInt, &totalPages, nil
 }
 
 // Create implements SessionUsecase.
