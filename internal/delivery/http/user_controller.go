@@ -114,13 +114,22 @@ func (controller *UserControllerImpl) FindAll(ctx *fiber.Ctx) error {
 
 	role := ctx.Query("role")
 
-	responses, err = controller.UserUsecase.FindAll(ctx.UserContext(), uint(userId), role)
+	order := ctx.Query("order")
+	page := ctx.QueryInt("page")
+	limit := ctx.QueryInt("limit")
+
+	responses, currentPage, totalRecords, totalPages, err := controller.UserUsecase.FindAll(ctx.UserContext(), uint(userId), role, order, page, limit)
 	if err != nil {
 		log.Println("failed to search user")
 		return err
 	}
 
-	return ctx.JSON(model.WebResponses[model.UserResponse]{Data: responses})
+	return ctx.JSON(model.WebResponsesPagination[model.UserResponse]{
+		Data:         responses,
+		CurrentPage:  *currentPage,
+		TotalRecords: *totalRecords,
+		TotalPages:   *totalPages,
+	})
 }
 
 // Login implements UserController.

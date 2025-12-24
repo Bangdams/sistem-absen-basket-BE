@@ -10,6 +10,7 @@ import (
 type UserRepository interface {
 	FindByIdForUpdate(tx *gorm.DB, user *entity.User) error
 	FindAll(tx *gorm.DB, userId uint, role string, users *[]entity.User) error
+	FindAllForPagging(tx *gorm.DB, userId uint, role string, pageSize int, offset int, order string, users *[]entity.User) (int64, error)
 	FindCoachByName(tx *gorm.DB, user *entity.User) error
 	FindStudentByName(tx *gorm.DB, user *entity.User) error
 	FindByUsername(tx *gorm.DB, user *entity.User) error
@@ -55,6 +56,37 @@ func (repository *UserRepositoryImpl) FindAll(tx *gorm.DB, userId uint, role str
 	}
 
 	return query.Not("id = ?", userId).Where("role = ?", role).Find(users).Error
+}
+
+func (repository *UserRepositoryImpl) FindAllForPagging(tx *gorm.DB, userId uint, role string, pageSize int, offset int, order string, users *[]entity.User) (int64, error) {
+	var total int64
+
+	query := tx.Model(&entity.User{})
+
+	switch role {
+	case "coach":
+		query = query.Preload("Coach")
+	case "student":
+		query = query.Preload("Student")
+	}
+
+	query = query.Not("id = ?", userId).Where("role = ?", role)
+
+	if err := query.Count(&total).Error; err != nil {
+		return 0, err
+	}
+
+	validOrder := "DESC"
+	if order == "ASC" {
+		validOrder = "ASC"
+	}
+
+	err := query.Order("created_at " + validOrder).
+		Limit(pageSize).
+		Offset(offset).
+		Find(users).Error
+
+	return total, err
 }
 
 // FindByName implements UserRepository.

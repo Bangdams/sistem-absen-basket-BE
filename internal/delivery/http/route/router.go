@@ -30,7 +30,7 @@ func (config *RouteConfig) Setup() {
 
 	// Api For Management User
 	api.Get("/users", util.CheckLevel("admin"), config.UserController.FindAll)
-	api.Get("/users/:id", config.UserController.FindByIdForUpdate, util.CheckLevel("admin"))
+	api.Get("/users/:id", util.CheckLevel("admin"), config.UserController.FindByIdForUpdate)
 	api.Post("/users", util.CheckLevel("admin"), config.UserController.Create)
 	api.Delete("/users/:id", util.CheckLevel("admin"), config.UserController.Delete)
 	api.Put("/users", util.CheckLevel("admin"), config.UserController.Update)
@@ -43,8 +43,8 @@ func (config *RouteConfig) Setup() {
 	api.Put("/session", util.CheckLevel("admin", "coach"), config.SessionController.Update)
 
 	// Api For AttendanceLog
-	api.Get("/attendance/:sessionId", util.CheckLevel("coach", "admin"), config.AttendanceLogController.FindAllBySessionId)
 	api.Get("/attendance/student", util.CheckLevel("student"), config.AttendanceLogController.FindAllByStudent)
 	api.Patch("/attendance/student", util.CheckLevel("student"), config.AttendanceLogController.UpdateByStudent)
+	api.Get("/attendance/:sessionId", util.CheckLevel("coach", "admin"), config.AttendanceLogController.FindAllBySessionId)
 	api.Patch("/attendance", util.CheckLevel("coach", "admin"), config.AttendanceLogController.UpdateByCoach)
 }

@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -24,7 +25,7 @@ type UserUsecase interface {
 	FindByIdForUpdate(ctx context.Context, userId uint, role string) (*model.UserResponse, error)
 	Create(ctx context.Context, request *model.UserRequest) (*model.UserResponse, error)
 	Delete(ctx context.Context, userId uint) error
-	FindAll(ctx context.Context, userId uint, role string) (*[]model.UserResponse, error)
+	FindAll(ctx context.Context, userId uint, role string, order string, page int, limit int) (*[]model.UserResponse, *int, *int, *int, error)
 	Login(ctx context.Context, request *model.LoginRequest) (*model.LoginResponse, *string, error)
 	Update(ctx context.Context, request *model.UpdateUserRequest) (*model.UserResponse, error)
 }
@@ -193,17 +194,39 @@ func (userUsecase *UserUsecaseImpl) Delete(ctx context.Context, userId uint) err
 }
 
 // FindAll implements UserUsecase.
-func (userUsecase *UserUsecaseImpl) FindAll(ctx context.Context, userId uint, role string) (*[]model.UserResponse, error) {
+func (userUsecase *UserUsecaseImpl) FindAll(ctx context.Context, userId uint, role string, order string, page int, limit int) (*[]model.UserResponse, *int, *int, *int, error) {
 	var users = &[]entity.User{}
-	err := userUsecase.UserRepo.FindAll(userUsecase.DB.WithContext(ctx), userId, role, users)
+
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 5
+	}
+
+	offset := (page - 1) * limit
+
+	if order == "" {
+		order = "DESC"
+	}
+
+	totalRecords, err := userUsecase.UserRepo.FindAllForPagging(userUsecase.DB.WithContext(ctx), userId, role, limit, offset, order, users)
 	if err != nil {
 		log.Println("failed when find all repo user : ", err)
-		return nil, fiber.ErrInternalServerError
+		return nil, nil, nil, nil, fiber.ErrInternalServerError
 	}
+
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(limit)))
+
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	taotalRecodeInt := int(totalRecords)
 
 	log.Println("success find all from usecase user")
 
-	return converter.UserToResponses(users), nil
+	return converter.UserToResponses(users), &page, &taotalRecodeInt, &totalPages, nil
 }
 
 // Login implements UserUsecase.
