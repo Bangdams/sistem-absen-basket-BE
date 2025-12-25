@@ -2,6 +2,8 @@ package repository
 
 import (
 	"absen-qr-backend/internal/entity"
+	"absen-qr-backend/internal/model"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -12,6 +14,7 @@ type SessionRepository interface {
 	Delete(tx *gorm.DB, session *entity.Session) error
 	FindAll(tx *gorm.DB, pageSize int, offset int, order string, sessions *[]entity.Session) (int64, error)
 	FindById(tx *gorm.DB, session *entity.Session) error
+	GetPresentToday(tx *gorm.DB) []model.Result
 }
 
 type SessionRepositoryImpl struct {
@@ -21,13 +24,6 @@ type SessionRepositoryImpl struct {
 func NewSessionRepository() SessionRepository {
 	return &SessionRepositoryImpl{}
 }
-
-// FindAll implements SessionRepository.
-// func (repository *SessionRepositoryImpl) FindAll(tx *gorm.DB, sessions *[]entity.Session) error {
-// 	return tx.Preload("Coach", func(db *gorm.DB) *gorm.DB {
-// 		return db.Select("user_id", "full_name")
-// 	}).Find(sessions).Error
-// }
 
 // FindAll implements SessionRepository.
 func (repository *SessionRepositoryImpl) FindAll(tx *gorm.DB, pageSize int, offset int, order string, sessions *[]entity.Session) (int64, error) {
@@ -58,6 +54,26 @@ func (repository *SessionRepositoryImpl) FindAll(tx *gorm.DB, pageSize int, offs
 
 // FindById implements SessionRepository.
 func (repository *SessionRepositoryImpl) FindById(tx *gorm.DB, session *entity.Session) error {
-
 	return tx.First(session).Error
+}
+
+// GetPresentToday implements SessionRepository.
+func (repository *SessionRepositoryImpl) GetPresentToday(tx *gorm.DB) []model.Result {
+	var session entity.Session
+
+	today := time.Now().Format("2006-01-02")
+
+	tx.Model(&entity.Session{}).
+		Select("id").
+		Where("created_at >= ? AND created_at < ?", today+" 00:00:00", today+" 23:59:59").
+		First(&session)
+
+	var results []model.Result
+
+	tx.Model(&entity.AttendanceLog{}).
+		Select("status, COUNT(*) as total").
+		Where("session_id = ?", session.ID).
+		Group("status").
+		Find(&results)
+	return results
 }

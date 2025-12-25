@@ -7,11 +7,12 @@ import (
 )
 
 type StudentRepository interface {
+	GetCount(tx *gorm.DB, totalStudent *int64) error
+	FindAll(tx *gorm.DB, students *[]entity.Student) error
+	FindById(tx *gorm.DB, student *entity.Student) error
 	Create(tx *gorm.DB, student *entity.Student) error
 	Update(tx *gorm.DB, student *entity.Student) error
 	Delete(tx *gorm.DB, student *entity.Student) error
-	FindAll(tx *gorm.DB, students *[]entity.Student) error
-	FindById(tx *gorm.DB, student *entity.Student) error
 }
 
 type StudentRepositoryImpl struct {
@@ -20,6 +21,11 @@ type StudentRepositoryImpl struct {
 
 func NewStudentRepository() StudentRepository {
 	return &StudentRepositoryImpl{}
+}
+
+// GetCount implements StudentRepository.
+func (repository *StudentRepositoryImpl) GetCount(tx *gorm.DB, totalStudent *int64) error {
+	return tx.Model(entity.Student{}).Count(totalStudent).Error
 }
 
 // FindAll implements StudentRepository.

@@ -150,7 +150,11 @@ func (attendanceLogUsecase *AttendanceLogUsecaseImpl) Update(ctx context.Context
 	token, err := util.ParseToken(request.QrToken, []byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, fiber.ErrUnauthorized
+			errorResponse.Message = "Your QR code has expired"
+			errorResponse.Details = []string{"Please request a new QR code to continue."}
+			jsonString, _ := json.Marshal(errorResponse)
+
+			return nil, fiber.NewError(fiber.StatusUnauthorized, string(jsonString))
 		}
 
 		return nil, fiber.ErrUnauthorized

@@ -12,6 +12,7 @@ type RouteConfig struct {
 	UserController          http.UserController
 	SessionController       http.SessionController
 	AttendanceLogController http.AttendanceLogController
+	DasboardController      http.DasboardController
 }
 
 func (config *RouteConfig) Setup() {
@@ -27,6 +28,9 @@ func (config *RouteConfig) Setup() {
 
 	// Api for show qr
 	api.Get("/show-qrcode/:filename", config.SessionController.ShowQrCode)
+
+	// Api For Dashboard
+	api.Get("/dashboard", util.CheckLevel("admin"), config.DasboardController.ShowDashboardData)
 
 	// Api For Management User
 	api.Get("/users", util.CheckLevel("admin"), config.UserController.FindAll)
