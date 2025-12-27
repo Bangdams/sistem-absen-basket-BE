@@ -12,7 +12,7 @@ func AttendanceLogToResponse(attendanceLog *entity.AttendanceLog) *model.Attenda
 	return &model.AttendanceLogResponse{
 		ID:        &attendanceLog.ID,
 		SessionId: attendanceLog.SessionId,
-		StudentId: attendanceLog.SessionId,
+		StudentId: attendanceLog.StudentId,
 		Title:     attendanceLog.Session.Title,
 		CreatedAt: attendanceLog.Session.CreatedAt,
 		StartedAt: attendanceLog.Session.StartedAt,
