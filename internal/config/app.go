@@ -29,19 +29,22 @@ func Bootstrap(config *BootstrapConfig) {
 	sessionUsecase := usecase.NewSessionUsecase(sessionRepo, userRepo, config.DB, config.Validate)
 	attendanceUsecase := usecase.NewAttendanceLogUsecase(attendanceRepo, config.DB, config.Validate)
 	dashboardUsecase := usecase.NewDashboardUsecase(sessionRepo, studentRepo, config.DB, config.Validate)
+	printAttendanceReportUsecase := usecase.NewPrintAttendanceReport(sessionRepo, config.DB, config.Validate)
 
 	// controller
 	userController := http.NewUserController(userUsecase)
 	sessionController := http.NewSessionController(sessionUsecase)
 	attendanceController := http.NewAttendanceLogController(attendanceUsecase)
 	dashboardController := http.NewDashboardController(dashboardUsecase)
+	printAttendanceReportController := http.NewPrintAttendanceReportController(printAttendanceReportUsecase)
 
 	routeConfig := route.RouteConfig{
-		App:                     config.App,
-		UserController:          userController,
-		SessionController:       sessionController,
-		AttendanceLogController: attendanceController,
-		DasboardController:      dashboardController,
+		App:                             config.App,
+		UserController:                  userController,
+		SessionController:               sessionController,
+		AttendanceLogController:         attendanceController,
+		DasboardController:              dashboardController,
+		PrintAttendanceReportController: printAttendanceReportController,
 	}
 
 	routeConfig.Setup()

@@ -8,11 +8,12 @@ import (
 )
 
 type RouteConfig struct {
-	App                     *fiber.App
-	UserController          http.UserController
-	SessionController       http.SessionController
-	AttendanceLogController http.AttendanceLogController
-	DasboardController      http.DasboardController
+	App                             *fiber.App
+	UserController                  http.UserController
+	SessionController               http.SessionController
+	AttendanceLogController         http.AttendanceLogController
+	DasboardController              http.DasboardController
+	PrintAttendanceReportController http.PrintAttendanceReportController
 }
 
 func (config *RouteConfig) Setup() {
@@ -22,6 +23,9 @@ func (config *RouteConfig) Setup() {
 
 	// Group Api
 	api := config.App.Group("/api")
+
+	// Get Print Data
+	api.Get("/print-report", util.CheckLevel("coach", "admin"), config.PrintAttendanceReportController.GetAttendanceReport)
 
 	// api check status login
 	api.Get("/check-login", config.UserController.CheckLogin)

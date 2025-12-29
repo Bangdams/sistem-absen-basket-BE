@@ -10,7 +10,7 @@ import (
 
 func Middelware(app *fiber.App) {
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:5173,http://192.168.43.122:5173",
+		AllowOrigins:     os.Getenv("SERVER_Allow_Origins"),
 		AllowCredentials: true,
 		AllowHeaders:     "Content-Type",
 	}))

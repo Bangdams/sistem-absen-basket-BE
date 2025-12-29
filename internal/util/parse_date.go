@@ -20,6 +20,15 @@ func ParseStringToDate(data string) (time.Time, error) {
 	return value, nil
 }
 
+func ParseToHourMinute(s string) string {
+	layout := "15:04:05"
+	t, err := time.Parse(layout, s)
+	if err != nil {
+		return s
+	}
+	return t.Format("15:04")
+}
+
 func CompareSessionTime(sessionStartedAt, requestStartedAt, sessionExpiresAt, requestExpiresAt string) bool {
 	format := "15:04"
 

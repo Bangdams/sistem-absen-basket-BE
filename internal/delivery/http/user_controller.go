@@ -155,8 +155,8 @@ func (controller *UserControllerImpl) Login(ctx *fiber.Ctx) error {
 		Name:     "token",
 		Value:    *token,
 		HTTPOnly: true,
-		Secure:   true,
-		SameSite: "None",
+		Secure:   false,
+		SameSite: "Lax",
 		Path:     "/",
 		MaxAge:   60 * 60 * 24 * lifeTime,
 	})
@@ -177,8 +177,8 @@ func (controller *UserControllerImpl) Logout(ctx *fiber.Ctx) error {
 		MaxAge:   -1,
 		Expires:  time.Now().Add(-time.Hour),
 		HTTPOnly: true,
-		Secure:   true,
-		SameSite: "None",
+		Secure:   false,
+		SameSite: "Lax",
 		Path:     "/",
 	})
 

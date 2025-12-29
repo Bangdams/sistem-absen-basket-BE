@@ -15,6 +15,7 @@ type SessionRepository interface {
 	FindAll(tx *gorm.DB, pageSize int, offset int, order string, sessions *[]entity.Session) (int64, error)
 	FindById(tx *gorm.DB, session *entity.Session) error
 	GetPresentToday(tx *gorm.DB) []model.Result
+	PrintAttendanceReport(tx *gorm.DB, startDate string, endDate string, sessions *[]entity.Session) error
 }
 
 type SessionRepositoryImpl struct {
@@ -76,4 +77,18 @@ func (repository *SessionRepositoryImpl) GetPresentToday(tx *gorm.DB) []model.Re
 		Group("status").
 		Find(&results)
 	return results
+}
+
+// PrintAttendanceReport implements [SessionRepository].
+func (repository *SessionRepositoryImpl) PrintAttendanceReport(tx *gorm.DB, startDate string, endDate string, sessions *[]entity.Session) error {
+	return tx.Model(&entity.Session{}).
+		Select("id", "title", "created_at", "started_at", "expires_at").
+		Where("created_at BETWEEN ? AND ?", startDate, endDate).
+		Preload("AttendanceLog", func(db *gorm.DB) *gorm.DB {
+			return db.Select("status", "student_id", "session_id").
+				Preload("Student", func(db *gorm.DB) *gorm.DB {
+					return db.Select("user_id", "nis", "full_name")
+				})
+		}).
+		Find(&sessions).Error
 }
