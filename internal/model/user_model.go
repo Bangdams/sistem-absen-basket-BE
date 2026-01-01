@@ -25,7 +25,7 @@ type UserRequest struct {
 type UpdateUserRequest struct {
 	ID       uint   `json:"id" validate:"required"`
 	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	Password string `json:"password"`
 	Role     string `json:"role" validate:"required"`
 
 	CoachRequest   *CoachRequest   `json:"coach" validate:"required_if=Role coach"`
