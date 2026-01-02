@@ -70,7 +70,11 @@ func (controller *AttendanceLogControllerImpl) UpdateByStudent(ctx *fiber.Ctx) e
 	// get data from jwt token
 	userToken := ctx.Locals("user").(*jwt.Token)
 	claims := userToken.Claims.(jwt.MapClaims)
-	studentId := claims["user_id"].(float64)
+	idClaim, ok := claims["user_id"].(float64)
+	if !ok {
+		return fiber.ErrUnauthorized
+	}
+	studentId := uint(idClaim)
 
 	_, err := controller.AttendanceLogUsecase.Update(ctx.UserContext(), request, uint(studentId))
 	if err != nil {

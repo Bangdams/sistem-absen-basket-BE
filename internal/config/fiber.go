@@ -3,7 +3,9 @@ package config
 import (
 	middelware "absen-qr-backend/internal/delivery/http/middleware"
 	"absen-qr-backend/internal/model"
+	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -14,7 +16,7 @@ func NewFiber() *fiber.App {
 		ErrorHandler: NewErrorHandler(),
 	})
 
-	middelware.Middelware(app)
+	middelware.Middleware(app)
 
 	return app
 }
@@ -22,17 +24,26 @@ func NewFiber() *fiber.App {
 func NewErrorHandler() fiber.ErrorHandler {
 	return func(ctx *fiber.Ctx, err error) error {
 		code := fiber.StatusInternalServerError
-		if e, ok := err.(*fiber.Error); ok {
+		message := "Internal Server Error"
+
+		if errors.Is(err, context.DeadlineExceeded) {
+			code = fiber.StatusRequestTimeout
+			message = "Process took too long"
+		} else if e, ok := err.(*fiber.Error); ok {
 			code = e.Code
+			message = e.Message
+		} else {
+			message = err.Error()
 		}
 
 		var errorResponse model.ErrorResponse
-		jsonError := json.Unmarshal([]byte(err.Error()), &errorResponse)
-		if jsonError != nil {
-			errorResponse.Message = err.Error()
-			return ctx.Status(code).JSON(model.WebResponse[any]{Errors: &errorResponse})
+
+		if jsonErr := json.Unmarshal([]byte(message), &errorResponse); jsonErr != nil {
+			errorResponse.Message = message
 		}
 
-		return ctx.Status(code).JSON(model.WebResponse[any]{Errors: &errorResponse})
+		return ctx.Status(code).JSON(model.WebResponse[any]{
+			Errors: &errorResponse,
+		})
 	}
 }

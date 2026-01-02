@@ -8,12 +8,11 @@ import (
 
 type AttendanceLogRepository interface {
 	ExistsBySessionAndStudent(tx *gorm.DB, sessionId uint, studentId uint) error
-	IsUserPresent(tx *gorm.DB, sessionId uint, studentId uint) (bool, error)
 	FindAllBySessionId(tx *gorm.DB, attendanceLogs *[]entity.AttendanceLog, sessionId uint) error
 	FindAllByStudent(tx *gorm.DB, attendanceLogs *[]entity.AttendanceLog, studentId uint) error
 	FindById(tx *gorm.DB, attendanceLog *entity.AttendanceLog) error
 	Create(tx *gorm.DB, attendanceLog *entity.AttendanceLog) error
-	Update(tx *gorm.DB, attendanceLog *entity.AttendanceLog) error
+	Update(tx *gorm.DB, attendanceLog *entity.AttendanceLog, updateByUser bool) (int64, error)
 	Delete(tx *gorm.DB, attendanceLog *entity.AttendanceLog) error
 }
 
@@ -33,18 +32,6 @@ func (repository *AttendanceLogRepositoryImpl) ExistsBySessionAndStudent(tx *gor
 	}
 
 	return nil
-}
-
-// IsUserPresent implements AttendanceLogRepository.
-func (repository *AttendanceLogRepositoryImpl) IsUserPresent(tx *gorm.DB, sessionId uint, studentId uint) (bool, error) {
-	var count int64
-
-	err := tx.Model(&entity.AttendanceLog{}).Where("session_id = ?", sessionId).Where("student_id = ?", studentId).Where("status = ?", "Hadir").Count(&count).Error
-	if err != nil {
-		return false, err
-	}
-
-	return count > 0, nil
 }
 
 // FindAllBySessionId implements AttendanceLogRepository.
@@ -96,13 +83,21 @@ func (repository *AttendanceLogRepositoryImpl) FindById(tx *gorm.DB, attendanceL
 
 // Update implements AttendanceLogRepository.
 // Subtle: this method shadows the method (Repository).Update of AttendanceLogRepositoryImpl.Repository.
-func (repository *AttendanceLogRepositoryImpl) Update(tx *gorm.DB, attendanceLog *entity.AttendanceLog) error {
-	return tx.Model(&entity.AttendanceLog{}).
+func (repository *AttendanceLogRepositoryImpl) Update(tx *gorm.DB, attendanceLog *entity.AttendanceLog, updateByUser bool) (int64, error) {
+	query := tx.Model(&entity.AttendanceLog{})
+
+	if updateByUser {
+		query = query.Where("status = ?", "Alpa")
+	}
+
+	result := query.
 		Select("ScannedAt", "Status").
 		Where("session_id = ?", attendanceLog.SessionId).
 		Where("student_id = ?", attendanceLog.StudentId).
 		Updates(map[string]interface{}{
 			"ScannedAt": attendanceLog.ScannedAt,
 			"Status":    attendanceLog.Status,
-		}).Error
+		})
+
+	return result.RowsAffected, result.Error
 }

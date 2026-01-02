@@ -171,19 +171,14 @@ func (attendanceLogUsecase *AttendanceLogUsecaseImpl) Update(ctx context.Context
 		Status:    "Hadir",
 	}
 
-	alreadyAttended, err := attendanceLogUsecase.AttendanceLogRepository.IsUserPresent(tx, attendanceLog.SessionId, attendanceLog.StudentId)
-	if err != nil {
-		return nil, fiber.ErrInternalServerError
-	}
-
-	if alreadyAttended {
-		return nil, fiber.ErrConflict
-	}
-
-	err = attendanceLogUsecase.AttendanceLogRepository.Update(tx, attendanceLog)
+	rowsAffected, err := attendanceLogUsecase.AttendanceLogRepository.Update(tx, attendanceLog, true)
 	if err != nil {
 		log.Println("update attendanceLog err:", err)
 		return nil, fiber.ErrInternalServerError
+	}
+
+	if rowsAffected == 0 {
+		return nil, fiber.ErrConflict
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -244,10 +239,14 @@ func (attendanceLogUsecase *AttendanceLogUsecaseImpl) ManualUpdate(ctx context.C
 		return nil, fiber.ErrInternalServerError
 	}
 
-	err = attendanceLogUsecase.AttendanceLogRepository.Update(tx, attendanceLog)
+	rowsAffected, err := attendanceLogUsecase.AttendanceLogRepository.Update(tx, attendanceLog, false)
 	if err != nil {
 		log.Println("update attendanceLog err:", err)
 		return nil, fiber.ErrInternalServerError
+	}
+
+	if rowsAffected == 0 {
+		return nil, fiber.ErrNotFound
 	}
 
 	if err := tx.Commit().Error; err != nil {
