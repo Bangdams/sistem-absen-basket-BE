@@ -193,11 +193,13 @@ func (controller *UserControllerImpl) CheckLogin(ctx *fiber.Ctx) error {
 
 	userId := claims["user_id"].(float64)
 	username := claims["username"].(string)
+	fullName := claims["full_name"].(string)
 	role := claims["role"].(string)
 
 	return ctx.JSON(model.WebResponse[*model.LoginResponse]{Data: &model.LoginResponse{
 		UserID:   uint(userId),
 		Username: username,
+		FullName: fullName,
 		Role:     role,
 	}})
 }

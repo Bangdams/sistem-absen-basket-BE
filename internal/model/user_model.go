@@ -40,6 +40,7 @@ type LoginRequest struct {
 type LoginResponse struct {
 	UserID   uint   `json:"user_id"`
 	Username string `json:"username"`
+	FullName string `json:"full_name"`
 	Role     string `json:"role"`
 }
 

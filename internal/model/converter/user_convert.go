@@ -48,11 +48,20 @@ func UserToResponseForUpdate(user *entity.User) *model.UserResponse {
 func LoginUserToResponse(user *entity.User) *model.LoginResponse {
 	log.Println("log from login user to response")
 
-	return &model.LoginResponse{
+	loginResponse := &model.LoginResponse{
 		UserID:   user.ID,
 		Username: user.Username,
 		Role:     user.Role,
 	}
+
+	switch user.Role {
+	case "coach":
+		loginResponse.FullName = user.Coach.FullName
+	case "student":
+		loginResponse.FullName = user.Student.FullName
+	}
+
+	return loginResponse
 }
 
 func UserToResponses(users *[]entity.User) *[]model.UserResponse {

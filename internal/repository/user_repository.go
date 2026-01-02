@@ -15,7 +15,7 @@ type UserRepository interface {
 	FindStudentByName(tx *gorm.DB, user *entity.User) error
 	FindByUsername(tx *gorm.DB, user *entity.User) error
 	FindById(tx *gorm.DB, user *entity.User) error
-	Login(tx *gorm.DB, user *entity.User, keyword string) error
+	Login(tx *gorm.DB, user *entity.User) error
 	Create(tx *gorm.DB, user *entity.User) error
 	Update(tx *gorm.DB, user *entity.User) error
 	Delete(tx *gorm.DB, user *entity.User) error
@@ -122,6 +122,22 @@ func (repository *UserRepositoryImpl) FindById(tx *gorm.DB, user *entity.User) e
 }
 
 // Login implements UserRepository.
-func (repository *UserRepositoryImpl) Login(tx *gorm.DB, user *entity.User, keyword string) error {
-	return tx.Where("username = ?", keyword).First(user).Error
+func (repository *UserRepositoryImpl) Login(tx *gorm.DB, user *entity.User) error {
+	err := repository.FindByUsername(tx, user)
+	if err != nil {
+		return err
+	}
+
+	switch user.Role {
+	case "coach":
+		return tx.Preload("Coach", func(db *gorm.DB) *gorm.DB {
+			return db.Select("user_id", "full_name")
+		}).First(user, user.ID).Error
+	case "student":
+		return tx.Preload("Student", func(db *gorm.DB) *gorm.DB {
+			return db.Select("user_id", "full_name")
+		}).First(user, user.ID).Error
+	}
+
+	return nil
 }

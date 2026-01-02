@@ -231,9 +231,11 @@ func (userUsecase *UserUsecaseImpl) FindAll(ctx context.Context, userId uint, ro
 
 // Login implements UserUsecase.
 func (userUsecase *UserUsecaseImpl) Login(ctx context.Context, request *model.LoginRequest) (*model.LoginResponse, *string, error) {
-	user := &entity.User{}
+	user := &entity.User{
+		Username: request.Username,
+	}
 
-	if err := userUsecase.UserRepo.Login(userUsecase.DB.WithContext(ctx), user, request.Username); err != nil {
+	if err := userUsecase.UserRepo.Login(userUsecase.DB.WithContext(ctx), user); err != nil {
 		log.Println("Login failed, username not found:", request.Username)
 		return nil, nil, fiber.ErrUnauthorized
 	}
