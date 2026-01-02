@@ -25,7 +25,7 @@ type UserUsecase interface {
 	FindByIdForUpdate(ctx context.Context, userId uint, role string) (*model.UserResponse, error)
 	Create(ctx context.Context, request *model.UserRequest) (*model.UserResponse, error)
 	Delete(ctx context.Context, userId uint) error
-	FindAll(ctx context.Context, userId uint, role string, order string, page int, limit int) (*[]model.UserResponse, *int, *int, *int, error)
+	FindAll(ctx context.Context, userId uint, role string, order string, page int, limit int, sortBy string) (*[]model.UserResponse, *int, *int, *int, error)
 	Login(ctx context.Context, request *model.LoginRequest) (*model.LoginResponse, *string, error)
 	Update(ctx context.Context, request *model.UpdateUserRequest) (*model.UserResponse, error)
 }
@@ -194,7 +194,7 @@ func (userUsecase *UserUsecaseImpl) Delete(ctx context.Context, userId uint) err
 }
 
 // FindAll implements UserUsecase.
-func (userUsecase *UserUsecaseImpl) FindAll(ctx context.Context, userId uint, role string, order string, page int, limit int) (*[]model.UserResponse, *int, *int, *int, error) {
+func (userUsecase *UserUsecaseImpl) FindAll(ctx context.Context, userId uint, role string, order string, page int, limit int, sortBy string) (*[]model.UserResponse, *int, *int, *int, error) {
 	var users = &[]entity.User{}
 
 	if page <= 0 {
@@ -210,7 +210,7 @@ func (userUsecase *UserUsecaseImpl) FindAll(ctx context.Context, userId uint, ro
 		order = "DESC"
 	}
 
-	totalRecords, err := userUsecase.UserRepo.FindAllForPagging(userUsecase.DB.WithContext(ctx), userId, role, limit, offset, order, users)
+	totalRecords, err := userUsecase.UserRepo.FindAllForPagging(userUsecase.DB.WithContext(ctx), userId, role, limit, offset, order, sortBy, users)
 	if err != nil {
 		log.Println("failed when find all repo user : ", err)
 		return nil, nil, nil, nil, fiber.ErrInternalServerError

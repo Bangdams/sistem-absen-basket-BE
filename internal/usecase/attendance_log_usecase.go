@@ -244,17 +244,6 @@ func (attendanceLogUsecase *AttendanceLogUsecaseImpl) ManualUpdate(ctx context.C
 		return nil, fiber.ErrInternalServerError
 	}
 
-	alreadyAttended, err := attendanceLogUsecase.AttendanceLogRepository.IsUserPresent(tx, attendanceLog.SessionId, attendanceLog.StudentId)
-	if err != nil {
-		log.Println("error IsUserPresesnt in attendance log usecase : ", err)
-		return nil, fiber.ErrInternalServerError
-	}
-
-	if alreadyAttended {
-		log.Println("error conflict : ", err)
-		return nil, fiber.ErrConflict
-	}
-
 	err = attendanceLogUsecase.AttendanceLogRepository.Update(tx, attendanceLog)
 	if err != nil {
 		log.Println("update attendanceLog err:", err)

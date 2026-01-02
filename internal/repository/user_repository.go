@@ -10,7 +10,7 @@ import (
 type UserRepository interface {
 	FindByIdForUpdate(tx *gorm.DB, user *entity.User) error
 	FindAll(tx *gorm.DB, userId uint, role string, users *[]entity.User) error
-	FindAllForPagging(tx *gorm.DB, userId uint, role string, pageSize int, offset int, order string, users *[]entity.User) (int64, error)
+	FindAllForPagging(tx *gorm.DB, userId uint, role string, pageSize int, offset int, order string, sortBy string, users *[]entity.User) (int64, error)
 	FindCoachByName(tx *gorm.DB, user *entity.User) error
 	FindStudentByName(tx *gorm.DB, user *entity.User) error
 	FindByUsername(tx *gorm.DB, user *entity.User) error
@@ -58,19 +58,31 @@ func (repository *UserRepositoryImpl) FindAll(tx *gorm.DB, userId uint, role str
 	return query.Not("id = ?", userId).Where("role = ?", role).Find(users).Error
 }
 
-func (repository *UserRepositoryImpl) FindAllForPagging(tx *gorm.DB, userId uint, role string, pageSize int, offset int, order string, users *[]entity.User) (int64, error) {
+func (repository *UserRepositoryImpl) FindAllForPagging(tx *gorm.DB, userId uint, role string, pageSize int, offset int, order string, sortBy string, users *[]entity.User) (int64, error) {
 	var total int64
-
 	query := tx.Model(&entity.User{})
+
+	sortColumn := "users.created_at"
 
 	switch role {
 	case "coach":
 		query = query.Preload("Coach")
+
+		if sortBy == "name" {
+			query = query.Joins("JOIN coaches ON coaches.user_id = users.id")
+			sortColumn = "coaches.full_name"
+		}
+
 	case "student":
 		query = query.Preload("Student")
+
+		if sortBy == "name" {
+			query = query.Joins("JOIN students ON students.user_id = users.id")
+			sortColumn = "students.full_name"
+		}
 	}
 
-	query = query.Not("id = ?", userId).Where("role = ?", role)
+	query = query.Not("users.id = ?", userId).Where("users.role = ?", role)
 
 	if err := query.Count(&total).Error; err != nil {
 		return 0, err
@@ -81,10 +93,10 @@ func (repository *UserRepositoryImpl) FindAllForPagging(tx *gorm.DB, userId uint
 		validOrder = "ASC"
 	}
 
-	err := query.Order("created_at " + validOrder).
+	err := query.Order(sortColumn + " " + validOrder).
 		Limit(pageSize).
 		Offset(offset).
-		Find(users).Error
+		Find(&users).Error
 
 	return total, err
 }
